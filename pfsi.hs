@@ -63,7 +63,4 @@ parseLine input = parse logLine "(unknown)" input
 
 main = do 
 	ln <- readFile "access.log"
-	let r = map parseLine (lines ln)
-	let u = map (\l -> case l of Right res -> getUser res) r
-	let t = reverse . sort $ map (\i -> (length i, head i)) (groupBy ((==)) u)
-	mapM_ (\(x, y) -> putStrLn $ "Count: " ++ show x ++ " IP: " ++ y) t
+	mapM_ (\(x, y) -> putStrLn $ "Count: " ++ show x ++ "\tUser: " ++ y) (reverse . sort $ map (\i -> (length i, head i)) (groupBy ((==)) ( map (\l -> case l of Right res -> getUser res) (map parseLine (lines ln)))))
