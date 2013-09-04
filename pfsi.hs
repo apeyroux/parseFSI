@@ -57,10 +57,6 @@ logLine = do
 parseLine :: String -> Either ParseError LogLine
 parseLine input = parse logLine "(unknown)" input 
 
--- info sur les stats ip : 
--- let ips = map (\l -> case l of Right res -> getIP res) r
--- reverse . sort $ map (\i -> (length i, head i)) (groupBy ((==)) ips)
-
 main = do 
 	ln <- readFile "access.log"
 	mapM_ (\(x, y) -> putStrLn $ "Count: " ++ show x ++ "\tUser: " ++ y) (reverse . sort $ map (\i -> (length i, head i)) (groupBy ((==)) ( map (\l -> case l of Right res -> getUser res) (map parseLine (lines ln)))))
