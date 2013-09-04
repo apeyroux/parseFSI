@@ -1,6 +1,7 @@
 -- analyse des logs de la ForgeSI
 
 import Text.ParserCombinators.Parsec
+import System.Environment
 import Data.Function
 import Data.List
 
@@ -58,5 +59,7 @@ parseLine :: String -> Either ParseError LogLine
 parseLine input = parse logLine "(unknown)" input 
 
 main = do 
-	ln <- readFile "access.log"
+	args <- getArgs
+	ln <- readFile (args!!0)
 	mapM_ (\(x, y) -> putStrLn $ "Count: " ++ show x ++ "\tUser: " ++ y) (reverse . sort $ map (\i -> (length i, head i)) (groupBy ((==)) ( map (\l -> case l of Right res -> getUser res) (map parseLine (lines ln)))))
+	mapM_ (\(x, y) -> putStrLn $ "Count: " ++ show x ++ "\tIP: " ++ y) (reverse . sort $ map (\i -> (length i, head i)) (groupBy ((==)) ( map (\l -> case l of Right res -> getIP res) (map parseLine (lines ln)))))
