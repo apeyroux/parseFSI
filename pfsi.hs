@@ -1,6 +1,7 @@
 -- analyse des logs de la ForgeSI
 
 import Text.ParserCombinators.Parsec
+import Control.Applicative
 import System.Environment
 import Data.Function
 import Data.List
@@ -17,42 +18,26 @@ data LogLine = LogLine {
     , getUA     :: String
 } deriving (Ord, Show, Eq)
 
-plainValue :: Parser String
-plainValue = many1 (noneOf " \n")
+valueBetween:: Char -> Char -> Parser String
+valueBetween o c = between (char o) (char c) (Control.Applicative.many $ noneOf [c])
 
-bracketedValue :: Parser String
-bracketedValue = do
-    char '['
-    content <- many (noneOf "]")
-    char ']'
-    return content
-
-quotedValue :: Parser String
-quotedValue = do
-    char '"'
-    content <- many (noneOf "\"")
-    char '"'
-    return content
+plainV, bracketedV, quotedV, finalQuote :: Parser String
+plainV     = many1 (noneOf " \n") <* space
+bracketedV = valueBetween '[' ']' <* space
+quotedV    = valueBetween '"' '"' <* space
+finalQuote = valueBetween '"' '"'
 
 logLine :: Parser LogLine
 logLine = do
-    ip <- plainValue
-    space -- parse and throw away a space
-    ident <- plainValue
-    space
-    user <- plainValue
-    space
-    date <- bracketedValue
-    space
-    req <- quotedValue
-    space
-    status <- plainValue
-    space
-    bytes <- plainValue
-    space
-    ref <- quotedValue
-    space
-    ua <- quotedValue
+    ip     <- plainV
+    ident  <- plainV
+    user   <- plainV
+    date   <- bracketedV
+    req    <- quotedV
+    status <- plainV
+    bytes  <- plainV
+    ref    <- quotedV
+    ua     <- finalQuote
     return $ LogLine ip ident user date req status bytes ref ua 
 
 parseLine :: String -> Either ParseError LogLine
@@ -61,4 +46,5 @@ parseLine input = parse logLine "(unknown)" input
 main = do 
 	args <- getArgs
 	ln <- readFile (args!!0)
-	mapM_ (\(count, ip) -> putStrLn $ " [Count " ++ show count ++ "] IP " ++ ip) $ reverse . sort . map (\ip -> (length ip, head ip)) $ group . map (\l -> case parseLine l of Right r -> getIP r) $ lines ln
+	mapM_ (\(hit, user) -> putStrLn $ "User : " ++ user ++ "\taction : " ++ show hit) $ reverse . sort . map (\r -> (length r, head r)) $ group . sort . map (\l -> case parseLine l of Right res -> getUser res)$ lines ln
+
